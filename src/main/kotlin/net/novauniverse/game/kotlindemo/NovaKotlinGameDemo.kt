@@ -6,10 +6,12 @@ import net.zeeraa.novacore.commons.log.Log
 import net.zeeraa.novacore.spigot.gameengine.NovaCoreGameEngine
 import net.zeeraa.novacore.spigot.gameengine.module.modules.game.GameManager
 import net.zeeraa.novacore.spigot.gameengine.module.modules.game.map.mapmodule.MapModuleManager
+import net.zeeraa.novacore.spigot.gameengine.module.modules.game.mapselector.selectors.guivoteselector.GUIMapVote
 import net.zeeraa.novacore.spigot.gameengine.module.modules.gamelobby.GameLobby
 import net.zeeraa.novacore.spigot.module.ModuleManager
 import net.zeeraa.novacore.spigot.module.modules.compass.CompassTracker
 import org.apache.commons.io.FileUtils
+import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
 
@@ -43,17 +45,24 @@ class NovaKotlinGameDemo: JavaPlugin() {
 		// Register map modules
 		MapModuleManager.addMapModule("kotlindemogame.config", KotlinDemoGameConfig::class.java)
 
+		val gameManager = ModuleManager.getModule(GameManager::class.java)
+
 		//Might not matter in this game since arrows instantly kills but this is how you prevent those players who think combat logging is funny
 		GameManager.getInstance().isUseCombatTagging = true
 
 		// Init our game class and lod it
 		game = KotlinDemoGame(this)
-		ModuleManager.getModule(GameManager::class.java).loadGame(game)
+		gameManager.loadGame(game)
+
+		// To show the map selector we also need the following code
+		val mapSelector = GUIMapVote()
+		Bukkit.getServer().pluginManager.registerEvents(mapSelector, this)
+		GameManager.getInstance().mapSelector = mapSelector
 
 		// We have our own logger class that allows players to get in game logs by using /nova log set LEVEL
 		Log.info(name, "Scheduled loading maps from " + mapFolder.path)
 		// Load the maps. We use readMapsFromFolderDelayed to allow addon plugins to load their own map modules before we load the maps
-		GameManager.getInstance().readMapsFromFolderDelayed(mapFolder, worldFolder)
+		gameManager.readMapsFromFolderDelayed(mapFolder, worldFolder)
 	}
 
 	override fun onDisable() {
